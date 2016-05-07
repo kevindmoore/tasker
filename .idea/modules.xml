@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Tasker.iml" filepath="$PROJECT_DIR$/Tasker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/taskerlibrary/taskerlibrary.iml" filepath="$PROJECT_DIR$/taskerlibrary/taskerlibrary.iml" />
+    </modules>
+  </component>
+</project>

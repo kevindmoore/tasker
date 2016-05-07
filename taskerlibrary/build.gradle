@@ -1,0 +1,133 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+ext {
+    github = 'https://github.com/kevindmoore/tasker'
+    githubUrl = 'https://github.com/kevindmoore/tasker.git'
+    projName = 'tasker'
+    projDescription = 'Library for UI and background tasks'
+    currentVersion = '1.0.0'
+    groupId = 'com.mastertechsoftware.tasker'
+}
+
+repositories {
+    maven {
+        url  "https://dl.bintray.com/kevindmoore/tasker"
+    }
+}
+android {
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
+
+    defaultConfig {
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
+        versionCode 1
+        versionName currentVersion
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile libLogging
+}
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+
+task generateJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath()
+            .join(File.pathSeparator))
+    classpath += project.files(configurations.compile)
+//    excludes = ['com.mastertechsoftware.logging.*']
+    failOnError false
+}
+
+
+task generateJavadocsJar(type: Jar) {
+    from generateJavadocs.destinationDir
+    classifier 'javadoc'
+}
+
+generateJavadocsJar.dependsOn generateJavadocs
+
+group = 'com.mastertechsoftware.tasker'
+version = currentVersion
+
+
+artifacts {
+    archives generateJavadocsJar
+    archives generateSourcesJar
+}
+
+
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            name projName
+            description projDescription
+            url github
+            inceptionYear '2016'
+
+            packaging 'aar'
+            groupId groupId
+            artifactId projName
+            version currentVersion
+
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                connection githubUrl
+                url github
+
+            }
+            developers {
+                developer {
+                    name 'Kevin Moore'
+                }
+            }
+        }
+    }
+}
+
+
+bintray {
+    user = bintray_user
+    key = bintray_key
+    dryRun = false //Whether to run this as dry-run, without deploying
+    configurations = ['archives']
+    pkg {
+        repo = 'maven'
+        name = projName
+
+        labels = ['android']
+        licenses = ['Apache-2.0']
+        vcsUrl = githubUrl
+//        websiteUrl = github
+//        version {
+//            name = projName
+//            desc = projDescription
+//            released  = new Date()
+//            vcsTag = '1.0.0'
+//            attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
+//        }
+    }
+}
