@@ -5,7 +5,7 @@ apply plugin: 'com.jfrog.bintray'
 ext {
     github = 'https://github.com/kevindmoore/tasker'
     githubUrl = 'https://github.com/kevindmoore/tasker.git'
-    projName = 'tasker'
+    projName = 'taskerlibrary'
     projDescription = 'Library for UI and background tasks'
     currentVersion = '1.0.0'
     groupId = 'com.mastertechsoftware.tasker'
@@ -16,6 +16,7 @@ repositories {
         url  "https://dl.bintray.com/kevindmoore/tasker"
     }
 }
+
 android {
     compileSdkVersion androidCompileSdkVersion
     buildToolsVersion androidBuildToolsVersion
@@ -63,16 +64,11 @@ task generateJavadocsJar(type: Jar) {
 
 generateJavadocsJar.dependsOn generateJavadocs
 
-group = 'com.mastertechsoftware.tasker'
-version = currentVersion
-
 
 artifacts {
     archives generateJavadocsJar
     archives generateSourcesJar
 }
-
-
 
 install {
     repositories.mavenInstaller {
@@ -108,6 +104,9 @@ install {
     }
 }
 
+group = 'com.mastertechsoftware.tasker'
+version = currentVersion
+
 
 bintray {
     user = bintray_user
@@ -121,7 +120,7 @@ bintray {
         labels = ['android']
         licenses = ['Apache-2.0']
         vcsUrl = githubUrl
-//        websiteUrl = github
+        websiteUrl = github
 //        version {
 //            name = projName
 //            desc = projDescription
