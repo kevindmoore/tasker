@@ -1,13 +1,13 @@
 # Tasker
-This library helps with sequential tasks that will be run one after another and only when each task is finished. These tasks can either be UI, background or both. 
+This library helps with sequential tasks that will be run one after another and only when each task is finished. These tasks can either be UI or background. 
 
 ## Downloading
 ``` 
 Gradle
-compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.0'
+compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.4'
 ```
 
-## Usage
+## Usage Example
 
 ```
 		Tasker.create().

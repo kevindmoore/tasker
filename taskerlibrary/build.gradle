@@ -7,7 +7,7 @@ ext {
     githubUrl = 'https://github.com/kevindmoore/tasker.git'
     projName = 'taskerlibrary'
     projDescription = 'Library for UI and background tasks'
-    currentVersion = '1.0.0'
+    currentVersion = '1.0.4'
     groupId = 'com.mastertechsoftware.tasker'
 }
 

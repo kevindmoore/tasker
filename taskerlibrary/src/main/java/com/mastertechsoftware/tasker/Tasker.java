@@ -3,6 +3,7 @@ package com.mastertechsoftware.tasker;
 import com.mastertechsoftware.logging.Logger;
 
 import android.os.Handler;
+import android.os.Looper;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -21,8 +22,8 @@ public class Tasker {
 		UI,
 		BACKGROUND
 	}
-	protected Handler handler = new Handler(); // This assumes the tasker class is created in the main thread
-	protected final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+	protected Handler handler;
+	protected ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 	protected LinkedBlockingDeque<Task> tasks = new LinkedBlockingDeque<>();
 	protected TaskFinisher finisher;
 	protected boolean noErrors = true;
@@ -37,6 +38,7 @@ public class Tasker {
 		return new Tasker();
 	}
 
+
 	/**
 	 * Add a new task
 	 * @param task
@@ -46,6 +48,18 @@ public class Tasker {
 		tasks.add(task);
 		lastAddedTask = task;
 		return this;
+	}
+
+	/**
+	 * Create the handler as late as possible to make sure the main thread is ready
+	 */
+	protected void createHandler() {
+		if (handler != null) return;
+		try {
+			handler = new Handler(Looper.getMainLooper());
+		} catch (RuntimeException e) {
+
+		}
 	}
 
 	/**
@@ -70,6 +84,12 @@ public class Tasker {
 		return this;
 	}
 
+	/**
+	 * Add a condition to the last added task.
+	 * Task will only be run if this task is true
+	 * @param condition
+	 * @return Tasker
+	 */
 	public Tasker withCondition(Condition condition) {
 		lastAddedTask.setCondition(condition); // Note: This will crash if you haven't added at least 1 task
 		return this;
@@ -96,11 +116,11 @@ public class Tasker {
 	}
 
 	/**
-	 * Cancel a single Handler
+	 * Cancel a single task
 	 * @param task
 	 * @return true if we found and cancelled the task
 	 */
-	public boolean cancelTaskHandler(Task task) {
+	public boolean cancelTask(Task task) {
 		for (ThreadRunnable threadRunnable : runableMap.keySet()) {
 			if (threadRunnable.task == task) {
 				Future future = runableMap.remove(threadRunnable);
@@ -125,11 +145,11 @@ public class Tasker {
 			// If we're shutdown or terminated we can't accept any new requests.
 			if (mExecutor.isShutdown() || mExecutor.isTerminated()) {
 				Logger.error("Tasker:run - Executor is shutdown");
-				return false;
+				mExecutor = Executors.newSingleThreadExecutor();
 			}
 
-			for (Task handler : tasks) {
-				final ThreadRunnable threadRunnable = new ThreadRunnable(handler);
+			for (Task task : tasks) {
+				final ThreadRunnable threadRunnable = new ThreadRunnable(task);
 				final Future future = mExecutor.submit(threadRunnable);
 				runableMap.put(threadRunnable, future);
 			}
@@ -137,6 +157,7 @@ public class Tasker {
 			tasks.clear();
 
 		} catch (Exception RejectedExecutionException) {
+			Logger.error("Tasker:run - RejectedExecutionException", RejectedExecutionException);
 			return false;
 		}
 		return true;
@@ -150,6 +171,7 @@ public class Tasker {
 		runableMap.remove(threadRunnable);
 		if (runableMap.isEmpty() && finisher != null) {
 			shutdown();
+			createHandler();
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
@@ -188,6 +210,8 @@ public class Tasker {
 					return null;
 				}
 
+				createHandler();
+
 				if (task.runType() == THREAD_TYPE.BACKGROUND) {
 					result = task.run();
 				}
@@ -225,11 +249,16 @@ public class Tasker {
 				}
 				return result;
 			} catch (final Exception e) {
+				Logger.error("Tasker:run caught exception", e);
 				noErrors = false;
 				handler.post(new Runnable() {
 					@Override
 					public void run() {
-						task.setError(e);
+						try {
+							task.setError(e);
+						} catch (Exception e2) {
+							Logger.error("Tasker:run caught exception in setError", e2);
+						}
 					}
 				});
 			}

@@ -1,12 +1,13 @@
 package com.mastertechsoftware.tasker;
 
 import android.os.Handler;
+import android.os.Looper;
 
 /**
  * Abstract class if you want to ignore onSuccess or onError
  */
 public abstract class DefaultTask implements Task {
-	protected Handler handler = new Handler(); // This assumes the tasker class is created in the main thread
+	protected Handler handler;
 	protected Tasker.THREAD_TYPE threadType = Tasker.THREAD_TYPE.BACKGROUND;
 
 	protected boolean shouldContinue = true;
@@ -23,6 +24,18 @@ public abstract class DefaultTask implements Task {
 
 	public DefaultTask(Tasker.THREAD_TYPE threadType) {
 		this.threadType = threadType;
+	}
+
+	/**
+	 * Create the handler as late as possible to make sure the main thread is ready
+	 */
+	protected void createHandler() {
+		if (handler != null) return;
+		try {
+			handler = new Handler(Looper.getMainLooper());
+		} catch (RuntimeException e) {
+
+		}
 	}
 
 	/**
@@ -124,6 +137,7 @@ public abstract class DefaultTask implements Task {
 	 * @param runnable
 	 */
 	public void runOnUIThread(Runnable runnable) {
+		createHandler();
 		handler.post(runnable);
 	}
 
