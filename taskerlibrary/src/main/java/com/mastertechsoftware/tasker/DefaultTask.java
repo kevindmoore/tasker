@@ -1,20 +1,16 @@
 package com.mastertechsoftware.tasker;
 
-import android.os.Handler;
-import android.os.Looper;
-
 /**
  * Abstract class if you want to ignore onSuccess or onError
  */
-public abstract class DefaultTask implements Task {
-	protected Handler handler;
+public abstract class DefaultTask<T> implements Task<T> {
 	protected Tasker.THREAD_TYPE threadType = Tasker.THREAD_TYPE.BACKGROUND;
 
 	protected boolean shouldContinue = true;
 	protected Pausable pauseable;
 	protected Exception error;
 	protected Condition condition;
-	protected Object result;
+	protected T result;
 
 	/**
 	 * Constructors
@@ -24,18 +20,6 @@ public abstract class DefaultTask implements Task {
 
 	public DefaultTask(Tasker.THREAD_TYPE threadType) {
 		this.threadType = threadType;
-	}
-
-	/**
-	 * Create the handler as late as possible to make sure the main thread is ready
-	 */
-	protected void createHandler() {
-		if (handler != null) return;
-		try {
-			handler = new Handler(Looper.getMainLooper());
-		} catch (RuntimeException e) {
-
-		}
 	}
 
 	/**
@@ -59,16 +43,11 @@ public abstract class DefaultTask implements Task {
 	}
 
 	/**
-	 * Error Routines
+	 * Get/Set Error
 	 */
 	@Override
 	public Exception getError() {
 		return error;
-	}
-
-	@Override
-	public Object getResult() {
-		return result;
 	}
 
 	@Override
@@ -101,9 +80,18 @@ public abstract class DefaultTask implements Task {
 		return condition != null;
 	}
 
+	/**
+	 * Get/Set Results
+	 * @param result
+	 */
 	@Override
-	public void setResult(Object result) {
+	public void setResult(T result) {
 		this.result = result;
+	}
+
+	@Override
+	public T getResult() {
+		return result;
 	}
 
 	/**
@@ -130,15 +118,6 @@ public abstract class DefaultTask implements Task {
 	@Override
 	public void setRunType(Tasker.THREAD_TYPE threadType) {
 		this.threadType = threadType;
-	}
-
-	/**
-	 * Helper method to run a task on the UI thread
-	 * @param runnable
-	 */
-	public void runOnUIThread(Runnable runnable) {
-		createHandler();
-		handler.post(runnable);
 	}
 
 	/**

@@ -1,9 +1,9 @@
 package com.mastertechsoftware.tasker;
 
-import com.mastertechsoftware.logging.Logger;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -22,6 +22,8 @@ public class Tasker {
 		UI,
 		BACKGROUND
 	}
+
+	private static final String TAG = Tasker.class.getSimpleName();
 	protected Handler handler;
 	protected ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 	protected LinkedBlockingDeque<Task> tasks = new LinkedBlockingDeque<>();
@@ -144,7 +146,7 @@ public class Tasker {
 
 			// If we're shutdown or terminated we can't accept any new requests.
 			if (mExecutor.isShutdown() || mExecutor.isTerminated()) {
-				Logger.error("Tasker:run - Executor is shutdown");
+				Log.e(TAG,"Tasker:run - Executor is shutdown");
 				mExecutor = Executors.newSingleThreadExecutor();
 			}
 
@@ -157,7 +159,7 @@ public class Tasker {
 			tasks.clear();
 
 		} catch (Exception RejectedExecutionException) {
-			Logger.error("Tasker:run - RejectedExecutionException", RejectedExecutionException);
+			Log.e(TAG,"Tasker:run - RejectedExecutionException", RejectedExecutionException);
 			return false;
 		}
 		return true;
@@ -249,7 +251,7 @@ public class Tasker {
 				}
 				return result;
 			} catch (final Exception e) {
-				Logger.error("Tasker:run caught exception", e);
+				Log.e(TAG,"Tasker:run caught exception", e);
 				noErrors = false;
 				handler.post(new Runnable() {
 					@Override
@@ -257,7 +259,7 @@ public class Tasker {
 						try {
 							task.setError(e);
 						} catch (Exception e2) {
-							Logger.error("Tasker:run caught exception in setError", e2);
+							Log.e(TAG,"Tasker:run caught exception in setError", e2);
 						}
 					}
 				});

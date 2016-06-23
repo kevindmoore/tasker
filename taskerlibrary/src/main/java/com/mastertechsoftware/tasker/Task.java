@@ -3,14 +3,14 @@ package com.mastertechsoftware.tasker;
 /**
  * All tasks need to implement this interface
  */
-public interface Task {
+public interface Task<T> {
 	Object run();
 	boolean shouldContinue();
 	boolean hasError();
 	Exception getError();
 	void setError(Exception error);
-	void setResult(Object result);
-	Object getResult();
+	void setResult(T result);
+	T getResult();
 	void setPauseable(Pausable pauseable);
 	void setCondition(Condition condition);
 	Condition getCondition();
