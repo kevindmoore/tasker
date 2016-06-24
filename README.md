@@ -103,3 +103,17 @@ To stop processing, just set shouldContinue = false;
 To pause a UI Task to wait for user input, call setPaused(true). When ready, call setPaused(false). In our example, I have a variable named currentDefaultTaskHandler that I set so the rest of the code knows which task to unpause.
 
 To handle things when all tasks are done (either with a successful or error state), add a TaskFinisher to the end. (actually it can be anywhere)
+## License
+Copyright 2016 Master Tech Software.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
