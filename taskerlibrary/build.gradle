@@ -7,8 +7,8 @@ ext {
     githubUrl = 'https://github.com/kevindmoore/tasker.git'
     projName = 'taskerlibrary'
     projDescription = 'Library for UI and background tasks'
-    currentVersionCode = 5
-    currentVersion = '1.0.5'
+    currentVersionCode = 6
+    currentVersion = '1.0.6'
     groupId = 'com.mastertechsoftware.tasker'
 }
 
@@ -52,7 +52,6 @@ task generateJavadocs(type: Javadoc) {
     classpath += project.files(android.getBootClasspath()
             .join(File.pathSeparator))
     classpath += project.files(configurations.compile)
-//    excludes = ['com.mastertechsoftware.logging.*']
     failOnError false
 }
 
@@ -121,12 +120,5 @@ bintray {
         licenses = ['Apache-2.0']
         vcsUrl = githubUrl
         websiteUrl = github
-//        version {
-//            name = projName
-//            desc = projDescription
-//            released  = new Date()
-//            vcsTag = '1.0.0'
-//            attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
-//        }
     }
 }

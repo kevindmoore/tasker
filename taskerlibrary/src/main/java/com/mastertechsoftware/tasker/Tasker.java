@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +33,7 @@ public class Tasker {
 	protected boolean noErrors = true;
 	protected Task lastAddedTask;
 	protected Map<ThreadRunnable, Future> runableMap = new ConcurrentHashMap<>();
+	protected List<Exception> errors = new ArrayList<>();
 
 	/**
 	 * Simple create task to get us started
@@ -171,17 +174,15 @@ public class Tasker {
 	 */
 	protected void runnableFinished(ThreadRunnable threadRunnable) {
 		runableMap.remove(threadRunnable);
-		if (runableMap.isEmpty() && finisher != null) {
+		if (runableMap.isEmpty()) {
 			shutdown();
+		}
+		if (runableMap.isEmpty() && finisher != null) {
 			createHandler();
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
-					if (noErrors) {
-						finisher.onSuccess();
-					} else {
-						finisher.onError();
-					}
+					finisher.finished(errors);
 				}
 			});
 		}
@@ -257,6 +258,7 @@ public class Tasker {
 					@Override
 					public void run() {
 						try {
+							errors.add(e);
 							task.setError(e);
 						} catch (Exception e2) {
 							Log.e(TAG,"Tasker:run caught exception in setError", e2);
