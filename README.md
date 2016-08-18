@@ -4,7 +4,7 @@ This library helps with sequential tasks that will be run one after another and 
 ## Downloading
 ``` 
 Gradle
-compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.4'
+compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.7'
 ```
 
 ## Usage Example
@@ -53,20 +53,14 @@ compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.4'
 					@Override
 					public Object run() {
 						signIn();
-						shouldContinue = false;
+						setShouldContinue(false);
 						return null;
 					}
 				})
 				.addFinisher(new TaskFinisher() {
 					@Override
-					public void onSuccess() {
-						Logger.debug("Finished successfully");
-
-					}
-
-					@Override
-					public void onError() {
-						Logger.debug("Finished with errors");
+					void finished(List<Exception> errors) {
+						Logger.debug("Finished");
 
 					}
 				})
@@ -98,7 +92,7 @@ To run a UI Task call addUITask(Task). A DefaultTask class is provided so you ca
 If you want a task to only run when a certain condition is met, add a Condition class in withCondition. This will return true to run or false to skip.
 
 ### Stopping/Pausing
-To stop processing, just set shouldContinue = false; 
+To stop processing, just call setShouldContinue(false); 
 
 To pause a UI Task to wait for user input, call setPaused(true). When ready, call setPaused(false). In our example, I have a variable named currentDefaultTaskHandler that I set so the rest of the code knows which task to unpause.
 
