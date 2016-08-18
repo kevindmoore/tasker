@@ -11,6 +11,7 @@ public abstract class DefaultTask<T> implements Task<T> {
 	protected Exception error;
 	protected Condition condition;
 	protected T result;
+	protected T previousTaskResult;
 
 	/**
 	 * Constructors
@@ -92,6 +93,20 @@ public abstract class DefaultTask<T> implements Task<T> {
 	@Override
 	public T getResult() {
 		return result;
+	}
+
+	/**
+	 * Set/Get the previous result
+	 * @return
+	 */
+	@Override
+	public T getPreviousResult() {
+		return previousTaskResult;
+	}
+
+	@Override
+	public void setPreviousResult(T result) {
+		previousTaskResult = result;
 	}
 
 	/**

@@ -34,6 +34,7 @@ public class Tasker {
 	protected Task lastAddedTask;
 	protected Map<ThreadRunnable, Future> runableMap = new ConcurrentHashMap<>();
 	protected List<Exception> errors = new ArrayList<>();
+	protected Object previousResult;
 
 	/**
 	 * Simple create task to get us started
@@ -177,6 +178,8 @@ public class Tasker {
 		if (runableMap.isEmpty()) {
 			shutdown();
 		}
+		final Task task = threadRunnable.getTask();
+		previousResult = task.getResult();
 		if (runableMap.isEmpty() && finisher != null) {
 			createHandler();
 			handler.post(new Runnable() {
@@ -205,6 +208,10 @@ public class Tasker {
 			task.setPauseable(this);
 		}
 
+		public Task getTask() {
+			return task;
+		}
+
 		@Override
 		public Object call() throws Exception {
 			try {
@@ -215,8 +222,12 @@ public class Tasker {
 
 				createHandler();
 
+				if (previousResult != null) {
+					task.setPreviousResult(previousResult);
+				}
 				if (task.runType() == THREAD_TYPE.BACKGROUND) {
 					result = task.run();
+					task.setResult(result);
 				}
 				// Make UI Thread calls
 				handler.post(new Runnable() {
@@ -227,8 +238,6 @@ public class Tasker {
 								result = task.run();
 								task.setResult(result);
 								uiWait.countDown();
-							} else {
-								task.setResult(result);
 							}
 						} catch (Exception e) {
 							noErrors = false;

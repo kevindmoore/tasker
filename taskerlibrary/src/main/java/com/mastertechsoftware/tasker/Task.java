@@ -11,6 +11,8 @@ public interface Task<T> {
 	void setError(Exception error);
 	void setResult(T result);
 	T getResult();
+	void setPreviousResult(T result);
+	T getPreviousResult();
 	void setPauseable(Pausable pauseable);
 	void setCondition(Condition condition);
 	Condition getCondition();
