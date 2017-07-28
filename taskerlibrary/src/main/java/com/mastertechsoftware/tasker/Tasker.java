@@ -1,6 +1,8 @@
 package com.mastertechsoftware.tasker;
 
 
+import com.mastertechsoftware.logging.Logger;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -15,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class for Sequentially running tasks in the background
@@ -31,6 +34,7 @@ public class Tasker {
 	protected LinkedBlockingDeque<Task> tasks = new LinkedBlockingDeque<>();
 	protected TaskFinisher finisher;
 	protected boolean noErrors = true;
+	protected boolean debugging = true;
 	protected Task lastAddedTask;
 	protected Map<ThreadRunnable, Future> runableMap = new ConcurrentHashMap<>();
 	protected List<Exception> errors = new ArrayList<>();
@@ -118,6 +122,11 @@ public class Tasker {
 	private void shutdown() {
 		if (!mExecutor.isShutdown() && !mExecutor.isTerminated()) {
 			mExecutor.shutdown();
+			try {
+				mExecutor.awaitTermination(2, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				Logger.error("Problems awaiting Executor shutdown");
+			}
 		}
 	}
 
@@ -148,14 +157,9 @@ public class Tasker {
 		// case something throws.
 		try {
 
-			// If we're shutdown or terminated we can't accept any new requests.
-			if (mExecutor.isShutdown() || mExecutor.isTerminated()) {
-				Log.e(TAG,"Tasker:run - Executor is shutdown");
-				mExecutor = Executors.newSingleThreadExecutor();
-			}
-
 			for (Task task : tasks) {
 				final ThreadRunnable threadRunnable = new ThreadRunnable(task);
+				recreateExecutorIfNecessary();
 				final Future future = mExecutor.submit(threadRunnable);
 				runableMap.put(threadRunnable, future);
 			}
@@ -163,10 +167,20 @@ public class Tasker {
 			tasks.clear();
 
 		} catch (Exception RejectedExecutionException) {
-			Log.e(TAG,"Tasker:run - RejectedExecutionException", RejectedExecutionException);
+			Logger.error("Tasker:run - RejectedExecutionException", RejectedExecutionException);
 			return false;
 		}
 		return true;
+	}
+
+	private void recreateExecutorIfNecessary() {
+		// If we're shutdown or terminated we can't accept any new requests.
+		if (mExecutor == null || mExecutor.isShutdown() || mExecutor.isTerminated()) {
+			if (mExecutor != null) {
+				Logger.error("Tasker:run - Executor is shutdown. Recreating");
+			}
+			mExecutor = Executors.newSingleThreadExecutor();
+		}
 	}
 
 	/**
@@ -174,20 +188,28 @@ public class Tasker {
 	 * @param threadRunnable
 	 */
 	protected void runnableFinished(ThreadRunnable threadRunnable) {
-		runableMap.remove(threadRunnable);
-		if (runableMap.isEmpty()) {
-			shutdown();
+		if (debugging) {
+			Log.d(TAG, "runnableFinished");
 		}
+		runableMap.remove(threadRunnable);
 		final Task task = threadRunnable.getTask();
 		previousResult = task.getResult();
 		if (runableMap.isEmpty() && finisher != null) {
 			createHandler();
+			if (debugging) {
+				Log.d(TAG, "Calling finisher");
+			}
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
 					finisher.finished(errors);
 				}
 			});
+		}
+
+		// If we have no more tasks, then shutdown the executor
+		if (runableMap.isEmpty()) {
+			shutdown();
 		}
 	}
 
@@ -216,6 +238,9 @@ public class Tasker {
 		public Object call() throws Exception {
 			try {
 				if (task.hasCondition() && !task.getCondition().shouldExecute()) {
+					if (debugging) {
+						Log.d(TAG, "Tasks condition failed. Not running task");
+					}
 					runnableFinished(this);
 					return null;
 				}
@@ -224,32 +249,36 @@ public class Tasker {
 
 				if (previousResult != null) {
 					task.setPreviousResult(previousResult);
+					previousResult = null;
 				}
 				if (task.runType() == THREAD_TYPE.BACKGROUND) {
+					if (debugging) {
+						Log.d(TAG, "Running task in background");
+					}
 					result = task.run();
 					task.setResult(result);
-				}
-				// Make UI Thread calls
-				handler.post(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							if (task.runType() == THREAD_TYPE.UI) {
+				} else {
+					// Make UI Thread calls
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								if (debugging) {
+									Log.d(TAG, "Running task on UI Thread");
+								}
 								result = task.run();
 								task.setResult(result);
 								uiWait.countDown();
-							}
-						} catch (Exception e) {
-							noErrors = false;
-							task.setError(e);
-							if (task.runType() == THREAD_TYPE.UI) {
-								uiWait.countDown();
+							} catch (Exception e) {
+								noErrors = false;
+								task.setError(e);
+								if (task.runType() == THREAD_TYPE.UI) {
+									uiWait.countDown();
+								}
 							}
 						}
-					}
-				});
-				// Wait until UI is finished
-				if (task.runType() == THREAD_TYPE.UI) {
+					});
+					// Wait until UI is finished
 					uiWait.await();
 				}
 				if (paused) {
@@ -261,7 +290,7 @@ public class Tasker {
 				}
 				return result;
 			} catch (final Exception e) {
-				Log.e(TAG,"Tasker:run caught exception", e);
+				Logger.error("run caught exception", e);
 				noErrors = false;
 				handler.post(new Runnable() {
 					@Override
@@ -270,7 +299,7 @@ public class Tasker {
 							errors.add(e);
 							task.setError(e);
 						} catch (Exception e2) {
-							Log.e(TAG,"Tasker:run caught exception in setError", e2);
+							Logger.error("run caught exception in setError", e2);
 						}
 					}
 				});

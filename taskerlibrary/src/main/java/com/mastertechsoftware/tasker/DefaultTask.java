@@ -1,7 +1,7 @@
 package com.mastertechsoftware.tasker;
 
 /**
- * Abstract class if you want to ignore onSuccess or onError
+ * Abstract class. Implements everything except run
  */
 public abstract class DefaultTask<T> implements Task<T> {
 	protected Tasker.THREAD_TYPE threadType = Tasker.THREAD_TYPE.BACKGROUND;
