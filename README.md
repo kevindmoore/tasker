@@ -4,10 +4,10 @@ This library helps with sequential tasks that will be run one after another and 
 ## Downloading
 ``` 
 Gradle
-compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.7'
+compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.9'
 ```
 
-## Usage Example
+## Android Java Example
 
 ```
 		Tasker.create().
@@ -82,7 +82,17 @@ compile 'com.mastertechsoftware.tasker:taskerlibrary:1.0.7'
 	}				
 
 ```
-
+##Kotlin Example
+```
+        Tasker.create()
+                .addTask {
+                		// Background Task
+                    }
+                .addUITask{ task ->
+                	// UI Task
+                }
+                .run()
+```
 ## Important Concepts
 To start, just use Tasker.create(). This is in the builder format where calls can be chained together.
 

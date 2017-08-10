@@ -5,7 +5,6 @@ import com.mastertechsoftware.logging.Logger;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +32,7 @@ public class Tasker {
 	protected ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 	protected LinkedBlockingDeque<Task> tasks = new LinkedBlockingDeque<>();
 	protected TaskFinisher finisher;
-	protected boolean noErrors = true;
-	protected boolean debugging = true;
+	protected boolean debugging = false;
 	protected Task lastAddedTask;
 	protected Map<ThreadRunnable, Future> runableMap = new ConcurrentHashMap<>();
 	protected List<Exception> errors = new ArrayList<>();
@@ -188,17 +186,13 @@ public class Tasker {
 	 * @param threadRunnable
 	 */
 	protected void runnableFinished(ThreadRunnable threadRunnable) {
-		if (debugging) {
-			Log.d(TAG, "runnableFinished");
-		}
+		Logger.debug(debugging,"runnableFinished");
 		runableMap.remove(threadRunnable);
 		final Task task = threadRunnable.getTask();
 		previousResult = task.getResult();
 		if (runableMap.isEmpty() && finisher != null) {
 			createHandler();
-			if (debugging) {
-				Log.d(TAG, "Calling finisher");
-			}
+			Logger.debug(debugging,"Calling finisher");
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
@@ -238,9 +232,7 @@ public class Tasker {
 		public Object call() throws Exception {
 			try {
 				if (task.hasCondition() && !task.getCondition().shouldExecute()) {
-					if (debugging) {
-						Log.d(TAG, "Tasks condition failed. Not running task");
-					}
+					Logger.debug(debugging,"Tasks condition failed. Not running task");
 					runnableFinished(this);
 					return null;
 				}
@@ -252,9 +244,7 @@ public class Tasker {
 					previousResult = null;
 				}
 				if (task.runType() == THREAD_TYPE.BACKGROUND) {
-					if (debugging) {
-						Log.d(TAG, "Running task in background");
-					}
+					Logger.debug(debugging, "Running task in background");
 					result = task.run();
 					task.setResult(result);
 				} else {
@@ -263,14 +253,11 @@ public class Tasker {
 						@Override
 						public void run() {
 							try {
-								if (debugging) {
-									Log.d(TAG, "Running task on UI Thread");
-								}
+								Logger.debug(debugging,"Running task on UI Thread");
 								result = task.run();
 								task.setResult(result);
 								uiWait.countDown();
 							} catch (Exception e) {
-								noErrors = false;
 								task.setError(e);
 								if (task.runType() == THREAD_TYPE.UI) {
 									uiWait.countDown();
@@ -291,7 +278,6 @@ public class Tasker {
 				return result;
 			} catch (final Exception e) {
 				Logger.error("run caught exception", e);
-				noErrors = false;
 				handler.post(new Runnable() {
 					@Override
 					public void run() {

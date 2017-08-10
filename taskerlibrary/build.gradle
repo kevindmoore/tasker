@@ -1,4 +1,24 @@
+/*
+buildscript {
+    apply from: '../../tools.gradle'
+    repositories {
+        jcenter()
+        maven {
+            url 'https://maven.google.com'
+        }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradle_build_version"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$gradle_bintray_version"
+        classpath "com.github.dcendents:android-maven-gradle-plugin:$gradle_maven_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_plugin_version"
+    }
+}
+apply from: '../../projects.gradle'
+*/
+
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
@@ -7,9 +27,10 @@ ext {
     githubUrl = 'https://github.com/kevindmoore/tasker.git'
     projName = 'taskerlibrary'
     projDescription = 'Library for UI and background tasks'
-    currentVersionCode = 7
-    currentVersion = '1.0.7'
+    currentVersionCode = 9
+    currentVersion = '1.0.9'
     groupId = 'com.mastertechsoftware.tasker'
+    buildPath = 'com/mastertechsoftware/tasker/taskerlibrary/' + currentVersion
 }
 
 repositories {
@@ -37,8 +58,11 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+    implementation libLogging
+//    compile project(':logging')
+    implementation libKotlin
 }
 
 task generateSourcesJar(type: Jar) {
@@ -48,6 +72,7 @@ task generateSourcesJar(type: Jar) {
 
 
 task generateJavadocs(type: Javadoc) {
+    excludes = ['**/*.kt']
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath()
             .join(File.pathSeparator))
@@ -69,8 +94,10 @@ artifacts {
     archives generateSourcesJar
 }
 
+
 install {
     repositories.mavenInstaller {
+
         pom.project {
             name projName
             description projDescription
@@ -103,15 +130,33 @@ install {
     }
 }
 
-group = 'com.mastertechsoftware.tasker'
+group = groupId
 version = currentVersion
 
 
 bintray {
     user = bintray_user
     key = bintray_key
-    dryRun = false //Whether to run this as dry-run, without deploying
-    configurations = ['archives']
+    filesSpec {
+        from ('build/libs') {
+            include '*.jar'
+            rename ("tasker-" + currentVersion + "-(.*)\\.jar", projName + '-' + currentVersion + "-\$1.jar")
+        }
+        into buildPath
+        from ('build/outputs/aar') {
+            include 'tasker-release.aar'
+            rename {projName + '-' + currentVersion + ".aar"}
+        }
+        into buildPath
+        from ('build/poms') {
+            include '*.xml'
+            rename {projName + '-' + currentVersion + ".pom"}
+        }
+        into buildPath
+    }
+//    dryRun = false //Whether to run this as dry-run, without deploying
+//    configurations = ['archives']
+//    override = true
     pkg {
         repo = 'maven'
         name = projName
@@ -120,5 +165,14 @@ bintray {
         licenses = ['Apache-2.0']
         vcsUrl = githubUrl
         websiteUrl = github
+//        version {
+//            name = currentVersion
+//            desc = projDescription
+//            released  = new Date()
+//            vcsTag = currentVersion
+//        }
     }
 }
+
+//bintray.dependsOn install
+//install.dependsOn assemble
