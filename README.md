@@ -107,6 +107,25 @@ To stop processing, just call setShouldContinue(false);
 To pause a UI Task to wait for user input, call setPaused(true). When ready, call setPaused(false). In our example, I have a variable named currentDefaultTaskHandler that I set so the rest of the code knows which task to unpause.
 
 To handle things when all tasks are done (either with a successful or error state), add a TaskFinisher to the end. (actually it can be anywhere)
+### Possible Issues
+The second task runs right after the first: This may happen if your first task which is run on a background thread calls another API that also runs in the background. In this case you need to tell the task to pause until the API returns. 
+
+```
+	Tasker.create().addTask { Task -> 
+		task.setPaused(true)
+		ApiCall.doSomeLongRunningTask( object: callback {
+			override fun callbackmethod() {
+				task.setPaused(false)
+			}
+		})
+		.addUITask {
+		}
+		.withCondition {
+			<condition check>
+		}
+	.run()
+```
+
 ## License
 Copyright 2016 Master Tech Software.
 

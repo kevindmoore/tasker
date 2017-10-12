@@ -14,8 +14,8 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_plugin_version"
     }
 }
-apply from: '../../projects.gradle'
 */
+//apply from: '../../projects.gradle'
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
